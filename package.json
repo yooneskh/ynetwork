@@ -21,5 +21,8 @@
   "bugs": {
     "url": "https://github.com/yooneskh/ynetwork/issues"
   },
-  "homepage": "https://github.com/yooneskh/ynetwork#readme"
+  "homepage": "https://github.com/yooneskh/ynetwork#readme",
+  "dependencies": {
+    "axios": "^0.18.0"
+  }
 }
