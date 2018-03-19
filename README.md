@@ -1,2 +1,2 @@
 # ynetwork
-JAvascript Network request interface and helper
+Javascript Network request interface and helper

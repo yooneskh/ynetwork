@@ -1,0 +1,25 @@
+{
+  "name": "ynetwork",
+  "version": "1.0.0",
+  "description": "Javascript interface and helper for network requests",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yooneskh/ynetwork.git"
+  },
+  "keywords": [
+    "js",
+    "javascript",
+    "nework",
+    "requests"
+  ],
+  "author": "Yoones Khoshghadam <yooneskh@gmail.com> (https://yooneskh.ir)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yooneskh/ynetwork/issues"
+  },
+  "homepage": "https://github.com/yooneskh/ynetwork#readme"
+}
