@@ -33,6 +33,16 @@ module.exports = {
     post: function(url, payload, callback) {
         this.req(url, 'post', payload, callback);
     },
+    mockGet: function(url) {
+        this.get(url, function(res, status) {
+            console.log('mock of: ', url, status, res);
+        });
+    },
+    mockPost: function(url, payload) {
+        this.post(url, payload, function(res, status) {
+            console.log('mock of: ', url, status, res);
+        });
+    },
     normalize: function (thing) {
         if (typeof thing === 'string') return this.normalizeString(thing);
         else if (thing instanceof Object) return this.normalizeObject(thing);
