@@ -4,6 +4,7 @@ const axios = require('axios');
 module.exports = {
     postProcessor: null,
     preProcessor: null,
+    shortCircuit: null,
     debug: false,
     req: function(url, method, payload, callback) {
 
@@ -12,6 +13,17 @@ module.exports = {
         }
 
         if (this.debug) console.log('ynetwork', method, url, payload);
+
+        if (this.shortCircuit) {
+
+            var shortCircuitResult = this.shortCircuit(url, method, payload);
+            
+            if (shortCircuitResult && typeof shortCircuitResult === 'object') {
+                callback(shortCircuitResult.data, shortCircuitResult.status);
+                return console.log('ynetwork shortcircuited', method, url);
+            }
+
+        }
 
         axios({
             method: method,
