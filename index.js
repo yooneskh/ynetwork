@@ -57,7 +57,7 @@ module.exports = {
 
             if (this.preProcessor && !preProcessorResult) return console.log('ynetwork dismissed error', method, url);
 
-            if (typeof preProcessorResult === 'object') {
+            if (preProcessorResult && typeof preProcessorResult === 'object') {
                 _response = preProcessorResult.data;
                 _status   = preProcessorResult.status;
             }
