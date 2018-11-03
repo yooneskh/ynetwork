@@ -3,6 +3,7 @@ const axios = require('axios');
 
 module.exports = {
     postProcessor: null,
+    preProcessor: null,
     debug: false,
     req: function(url, method, payload, callback) {
 
@@ -16,15 +17,44 @@ module.exports = {
             method: method,
             url: url,
             data: payload,
-        }).then(function(res) {
+        }).then((res) => {
+            
             if (this.debug) console.log('ynetwork done', url, res);
+
+            let preProcessorResult = this.preProcessor ? this.preProcessor(res.data, res.status) : null;
+
+            if (!preProcessorResult) return console.log('ynetwork dismissed', method, url);
+
+            if (typeof preProcessorResult === 'object') {
+                res.data   = preProcessorResult.data;
+                res.status = preProcessorResult.status;
+            }
+
             if (callback) callback(res.data, res.status);
+
             if (this.postProcessor) this.postProcessor(res.data, res.status);
-        }.bind(this)).catch(function(e) {
+
+        }).catch((e) => {
+            
             if (this.debug) console.log('ynetwork error', url, e);
-            if (callback) callback(e.response ? e.response.data : null, e.response ? e.response.status : -1);
-            if (this.postProcessor) this.postProcessor(e.response ? e.response.data : null, e.response ? e.response.status : -1);
-        }.bind(this));
+
+            let _response = e.response ? e.response.data : null;
+            let _status   = e.response ? e.response.status : -1;
+
+            let preProcessorResult = this.preProcessor ? this.preProcessor(_response, _status) : null;
+
+            if (!preProcessorResult) return console.log('ynetwork dismissed error', method, url);
+
+            if (typeof preProcessorResult === 'object') {
+                _response = preProcessorResult.data;
+                _status   = preProcessorResult.status;
+            }
+
+            if (callback) callback(_response, _status);
+
+            if (this.postProcessor) this.postProcessor(_response, _status);
+
+        });
 
     },
     get: function(url, callback) {
