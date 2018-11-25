@@ -69,6 +69,63 @@ module.exports = {
         });
 
     },
+    createRequest(url, method, payload) {
+
+        if (payload) {
+            payload = this.normalize(payload);
+        }
+
+        if (this.debug) console.log('ynetwork', method, url, payload);
+
+        return axios({
+            method: method,
+            url: url,
+            data: payload
+        });
+
+    },
+    doRequest(request) {
+
+        request.then((res) => {
+            
+            if (this.debug) console.log('ynetwork done', url, res);
+
+            let preProcessorResult = this.preProcessor ? this.preProcessor(res.data, res.status) : null;
+
+            if (this.preProcessor && !preProcessorResult) return console.log('ynetwork dismissed', method, url);
+
+            if (preProcessorResult && typeof preProcessorResult === 'object') {
+                res.data   = preProcessorResult.data;
+                res.status = preProcessorResult.status;
+            }
+
+            if (callback) callback(res.data, res.status);
+
+            if (this.postProcessor) this.postProcessor(res.data, res.status);
+
+        }).catch((e) => {
+            
+            if (this.debug) console.log('ynetwork error', url, e);
+
+            let _response = e.response ? e.response.data : null;
+            let _status   = e.response ? e.response.status : -1;
+
+            let preProcessorResult = this.preProcessor ? this.preProcessor(_response, _status) : null;
+
+            if (this.preProcessor && !preProcessorResult) return console.log('ynetwork dismissed error', method, url);
+
+            if (preProcessorResult && typeof preProcessorResult === 'object') {
+                _response = preProcessorResult.data;
+                _status   = preProcessorResult.status;
+            }
+
+            if (callback) callback(_response, _status);
+
+            if (this.postProcessor) this.postProcessor(_response, _status);
+
+        });
+
+    },
     get: function(url, callback) {
         this.req(url, 'get', null, callback);
     },
@@ -84,6 +141,13 @@ module.exports = {
         this.post(url, payload, function(res, status) {
             console.log('mock of: ', url, status, res);
         });
+    },
+    all(requests, callback) {
+
+        const reqs = requests.map((req) => this.createRequest(req.url, req.method, req.payload));
+
+        axios.all(reqs).then(axios.spread(callback));
+
     },
     normalize: function (thing) {
         if (typeof thing === 'string') return this.normalizeString(thing);
