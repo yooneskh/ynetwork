@@ -2,152 +2,77 @@
 const axios = require('axios');
 
 module.exports = {
-    postProcessor: null,
+    debug: false,
     preProcessor: null,
     shortCircuit: null,
-    debug: false,
-    req: function(url, method, payload, callback) {
+    async req(method, url, payload) {
 
-        if (payload) {
-            payload = this.normalize(payload);
+        if (payload) payload = this.normalize(payload);
+
+        if (this.debug) {
+            console.log('ynetwork', method, url, payload);
         }
-
-        if (this.debug) console.log('ynetwork', method, url, payload);
 
         if (this.shortCircuit) {
 
-            var shortCircuitResult = this.shortCircuit(url, method, payload);
+            const shortCircuitResult = this.shortCircuit(url, method, payload);
             
             if (shortCircuitResult && typeof shortCircuitResult === 'object') {
-                callback(shortCircuitResult.data, shortCircuitResult.status);
-                return console.log('ynetwork shortcircuited', method, url);
+
+                console.log('ynetwork shortcircuited', method, url);
+
+                return {result: shortCircuitResult.data, status: shortCircuitResult.status}
+
             }
 
         }
 
-        axios({
-            method: method,
-            url: url,
-            data: payload,
-        }).then((res) => {
-            
-            if (this.debug) console.log('ynetwork done', url, res);
+        let status, response;
 
-            let preProcessorResult = this.preProcessor ? this.preProcessor(res.data, res.status) : null;
+        try {
 
-            if (this.preProcessor && !preProcessorResult) return console.log('ynetwork dismissed', method, url);
+            const result = await axios({method: method, url: url, data: payload});
 
-            if (preProcessorResult && typeof preProcessorResult === 'object') {
-                res.data   = preProcessorResult.data;
-                res.status = preProcessorResult.status;
+            status = result.status;
+            response = result.data;
+
+            if (this.debug) {
+                console.log('ynetwork done', url, status, response);
             }
 
-            if (callback) callback(res.data, res.status);
-
-            if (this.postProcessor) this.postProcessor(res.data, res.status);
-
-        }).catch((e) => {
+        }
+        catch (error) {
             
-            if (this.debug) console.log('ynetwork error', url, e);
+            status = error.response ? error.response.status : -1;
+            response = error.response ? error.response.data : null;
 
-            let _response = e.response ? e.response.data : null;
-            let _status   = e.response ? e.response.status : -1;
-
-            let preProcessorResult = this.preProcessor ? this.preProcessor(_response, _status) : null;
-
-            if (this.preProcessor && !preProcessorResult) return console.log('ynetwork dismissed error', method, url);
-
-            if (preProcessorResult && typeof preProcessorResult === 'object') {
-                _response = preProcessorResult.data;
-                _status   = preProcessorResult.status;
+            if (this.debug) {
+                console.log('ynetwork error', url, error);
             }
 
-            if (callback) callback(_response, _status);
-
-            if (this.postProcessor) this.postProcessor(_response, _status);
-
-        });
-
-    },
-    createRequest(url, method, payload) {
-
-        if (payload) {
-            payload = this.normalize(payload);
         }
 
-        if (this.debug) console.log('ynetwork', method, url, payload);
+        const preProcessorResult = this.preProcessor ? this.preProcessor(method, url, status, response) : null;
 
-        return axios({
-            method: method,
-            url: url,
-            data: payload
-        });
-
-    },
-    doRequest(request) {
-
-        request.then((res) => {
-            
-            if (this.debug) console.log('ynetwork done', url, res);
-
-            let preProcessorResult = this.preProcessor ? this.preProcessor(res.data, res.status) : null;
-
-            if (this.preProcessor && !preProcessorResult) return console.log('ynetwork dismissed', method, url);
-
-            if (preProcessorResult && typeof preProcessorResult === 'object') {
-                res.data   = preProcessorResult.data;
-                res.status = preProcessorResult.status;
+        if (this.preProcessor && preProcessorResult) {
+            if (typeof preProcessorResult === 'object') {
+                response = preProcessorResult.data;
+                status   = preProcessorResult.status;
             }
-
-            if (callback) callback(res.data, res.status);
-
-            if (this.postProcessor) this.postProcessor(res.data, res.status);
-
-        }).catch((e) => {
-            
-            if (this.debug) console.log('ynetwork error', url, e);
-
-            let _response = e.response ? e.response.data : null;
-            let _status   = e.response ? e.response.status : -1;
-
-            let preProcessorResult = this.preProcessor ? this.preProcessor(_response, _status) : null;
-
-            if (this.preProcessor && !preProcessorResult) return console.log('ynetwork dismissed error', method, url);
-
-            if (preProcessorResult && typeof preProcessorResult === 'object') {
-                _response = preProcessorResult.data;
-                _status   = preProcessorResult.status;
+            else {
+                console.log('ynetwork dismissed', method, url);
+                return {status: 0, result: null}
             }
+        }
 
-            if (callback) callback(_response, _status);
-
-            if (this.postProcessor) this.postProcessor(_response, _status);
-
-        });
+        return {status: status, result: response};
 
     },
-    get: function(url, callback) {
-        this.req(url, 'get', null, callback);
+    async get(url) {
+        return this.req('get', url, null);
     },
-    post: function(url, payload, callback) {
-        this.req(url, 'post', payload, callback);
-    },
-    mockGet: function(url) {
-        this.get(url, function(res, status) {
-            console.log('mock of: ', url, status, res);
-        });
-    },
-    mockPost: function(url, payload) {
-        this.post(url, payload, function(res, status) {
-            console.log('mock of: ', url, status, res);
-        });
-    },
-    all(requests, callback) {
-
-        const reqs = requests.map((req) => this.createRequest(req.url, req.method, req.payload));
-
-        axios.all(reqs).then(axios.spread(callback));
-
+    async post(url, payload) {
+        return this.req('post', url, payload);
     },
     normalize: function (thing) {
         if (typeof thing === 'string') return this.normalizeString(thing);
