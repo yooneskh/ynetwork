@@ -59,7 +59,7 @@ module.exports = {
                 response = preProcessorResult.data;
                 status   = preProcessorResult.status;
             }
-            else {
+            else if (preProcessorResult === true) {
                 console.log('ynetwork dismissed', method, url);
                 return {status: 0, result: null}
             }
