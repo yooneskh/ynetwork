@@ -47,7 +47,7 @@ module.exports = {
             response = error.response ? error.response.data : null;
 
             if (this.debug) {
-                console.log('ynetwork error', url, error);
+                console.log('ynetwork error', url, response, error);
             }
 
         }
