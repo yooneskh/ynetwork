@@ -5,7 +5,7 @@ module.exports = {
     debug: false,
     preProcessor: null,
     shortCircuit: null,
-    async req(method, url, payload) {
+    async req(method, url, payload, headers) {
 
         if (payload) payload = this.normalize(payload);
 
@@ -31,7 +31,7 @@ module.exports = {
 
         try {
 
-            const result = await axios({method: method, url: url, data: payload});
+            const result = await axios({method: method, url: url, data: payload, headers: headers});
 
             status = result.status;
             response = result.data;
@@ -68,11 +68,23 @@ module.exports = {
         return {status: status, result: response};
 
     },
-    async get(url) {
-        return this.req('get', url, null);
+    async get(url, payload, headers) {
+        return this.req('get', url, payload || null, headers || null);
     },
-    async post(url, payload) {
-        return this.req('post', url, payload);
+    async post(url, payload, headers) {
+        return this.req('post', url, payload, headers || null);
+    },
+    async patch(url, payload, headers) {
+        return this.req('patch', url, payload, headers || null);
+    },
+    async delete(url, payload, headers) {
+        return this.req('delete', url, payload, headers || null);
+    },
+    async put(url, payload, headers) {
+        return this.req('put', url, payload, headers || null);
+    },
+    async head(url, payload, headers) {
+        return this.req('head', url, payload, headers || null);
     },
     normalize: function (thing) {
         if (typeof thing === 'string') return this.normalizeString(thing);
