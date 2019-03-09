@@ -52,7 +52,7 @@ module.exports = {
 
         }
 
-        const preProcessorResult = this.preProcessor ? this.preProcessor(method, url, status, response) : null;
+        const preProcessorResult = this.preProcessor ? this.preProcessor(method, url, payload, status, response) : null;
 
         if (this.preProcessor && preProcessorResult) {
             if (typeof preProcessorResult === 'object') {
