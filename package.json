@@ -1,6 +1,6 @@
 {
   "name": "ynetwork",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Javascript interface and helper for network requests",
   "main": "index.js",
   "scripts": {
@@ -23,6 +23,6 @@
   },
   "homepage": "https://github.com/yooneskh/ynetwork#readme",
   "dependencies": {
-    "axios": "^0.18.0"
+    "axios": "^0.19.0"
   }
 }
