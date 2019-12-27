@@ -8,6 +8,7 @@ module.exports = {
   async req(method, url, payload, headers) {
 
     if (payload) payload = this.normalize(payload);
+    url = this.normalizeString(url);
 
     const requestHeaders = { ...this.headers, ...headers };
 
