@@ -2,8 +2,8 @@ const axios = require('axios').default;
 
 module.exports = {
   debug: false,
-  preProcessor: null,
-  shortCircuit: null,
+  preProcessor: undefined,
+  shortCircuit: undefined,
   headers: { },
   async req(method, url, payload, headers) {
 
@@ -19,7 +19,7 @@ module.exports = {
     if (this.shortCircuit) {
 
       const shortCircuitResult = this.shortCircuit(url, method, payload);
-      
+
       if (shortCircuitResult && typeof shortCircuitResult === 'object') {
         console.log('ynetwork shortcircuited', method, url);
         return { result: shortCircuitResult.data, status: shortCircuitResult.status }
@@ -42,9 +42,9 @@ module.exports = {
 
     }
     catch (error) {
-      
+
       status = error.response ? error.response.status : -1;
-      response = error.response ? error.response.data : null;
+      response = error.response ? error.response.data : undefined;
 
       if (this.debug) {
         console.log('ynetwork error', url, response, error);
@@ -52,7 +52,7 @@ module.exports = {
 
     }
 
-    const preProcessorResult = this.preProcessor ? this.preProcessor(method, url, payload, status, response) : null;
+    const preProcessorResult = this.preProcessor ? this.preProcessor(method, url, payload, status, response) : undefined;
 
     if (this.preProcessor && preProcessorResult) {
       if (typeof preProcessorResult === 'object') {
@@ -61,7 +61,7 @@ module.exports = {
       }
       else if (preProcessorResult === true) {
         console.log('ynetwork dismissed', method, url);
-        return { status: 0, result: null };
+        return { status: 0, result: undefined };
       }
     }
 
@@ -69,7 +69,7 @@ module.exports = {
 
   },
   async get(url, payload, headers) {
-    return this.req('get', url, payload || null, headers || {});
+    return this.req('get', url, payload || undefined, headers || {});
   },
   async post(url, payload, headers) {
     return this.req('post', url, payload, headers || {});
