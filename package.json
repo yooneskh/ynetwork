@@ -13,17 +13,17 @@
   "keywords": [
     "js",
     "javascript",
-    "nework",
+    "network",
     "requests",
     "axios"
   ],
-  "author": "Yoones Khoshghadam <yooneskh@gmail.com> (https://yooneskh.ir)",
+  "author": "Yoones Khoshghadam <yooneskh@gmail.com> (https://khoshghadam.com)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/yooneskh/ynetwork/issues"
   },
   "homepage": "https://github.com/yooneskh/ynetwork#readme",
   "dependencies": {
-    "axios": "^0.20.0"
+    "axios": "0.21.1"
   }
 }
