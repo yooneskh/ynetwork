@@ -1,6 +1,6 @@
 {
   "name": "ynetwork",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Javascript interface and helper for network requests",
   "main": "index.js",
   "scripts": {

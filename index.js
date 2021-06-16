@@ -13,7 +13,7 @@ module.exports = {
     const requestHeaders = { ...this.headers, ...headers };
 
     if (this.debug) {
-      console.log('ynetwork', method, url, payload, requestHeaders);
+      console.log('--- ynetwork init', { method, url, payload, requestHeaders });
     }
 
     if (this.shortCircuit) {
@@ -21,23 +21,26 @@ module.exports = {
       const shortCircuitResult = this.shortCircuit(url, method, payload);
 
       if (shortCircuitResult && typeof shortCircuitResult === 'object') {
-        console.log('ynetwork shortcircuited', method, url);
+        console.log('--- ynetwork shortcircuited', { method, url });
         return { result: shortCircuitResult.data, status: shortCircuitResult.status }
       }
 
     }
 
-    let status, response;
+    let status;
+    let response;
+    let responseHeaders;
 
     try {
 
-      const result = await axios({ method: method, url: url, data: payload, headers: requestHeaders });
+      const result = await axios({ method, url, data: payload, headers: requestHeaders });
 
       status = result.status;
       response = result.data;
+      responseHeaders = result.headers;
 
       if (this.debug) {
-        console.log('ynetwork done', url, status, response);
+        console.log('--- ynetwork done', { url, status, response, headers: responseHeaders });
       }
 
     }
@@ -45,27 +48,28 @@ module.exports = {
 
       status = error.response ? error.response.status : -1;
       response = error.response ? error.response.data : undefined;
+      responseHeaders = error.response ? error.response.headers : undefined;
 
       if (this.debug) {
-        console.log('ynetwork error', url, response, error);
+        console.log('--- ynetwork error', { method, url, response, error, headers: responseHeaders });
       }
 
     }
 
     const preProcessorResult = this.preProcessor ? this.preProcessor(method, url, payload, status, response) : undefined;
-
     if (this.preProcessor && preProcessorResult) {
       if (typeof preProcessorResult === 'object') {
-        response = preProcessorResult.data;
-        status   = preProcessorResult.status;
+        response        = preProcessorResult.data;
+        status          = preProcessorResult.status;
+        responseHeaders = preProcessorResult.headers;
       }
       else if (preProcessorResult === true) {
-        console.log('ynetwork dismissed', method, url);
-        return { status: 0, result: undefined };
+        console.log('--- ynetwork dismissed', { method, url, headers: requestHeaders });
+        return { status: 0, result: undefined, headers: {} };
       }
     }
 
-    return { status: status, result: response };
+    return { status: status, result: response, headers: responseHeaders };
 
   },
   async get(url, payload, headers) {
