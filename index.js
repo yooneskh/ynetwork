@@ -1,8 +1,8 @@
 const axios = require('axios').default;
 
-async function axiosRequestResolver() {
+async function axiosRequestResolver({ method, url, data, headers }) {
 
-  const response = await axios({ method, url, data: payload, headers: requestHeaders });
+  const response = await axios({ method, url, data, headers });
 
   return {
     status: response.status,
