@@ -1,4 +1,26 @@
-const axios = require('axios').default;
+import axios from 'axios';
+
+const globalHeaders = {};
+let globalDebug = false;
+
+let globalPreprocessors = [];
+let globalShortCircuits = [];
+
+let globalRequestRunner = axiosRequestResolver;
+
+const normalizationReplace = [
+  ['0', '۰'],
+  ['1', '۱'],
+  ['2', '۲'],
+  ['3', '۳'],
+  ['4', '۴'],
+  ['5', '۵'],
+  ['6', '۶'],
+  ['7', '۷'],
+  ['8', '۸'],
+  ['9', '۹']
+];
+
 
 async function axiosRequestResolver({ method, url, data, headers }) {
 
@@ -12,120 +34,149 @@ async function axiosRequestResolver({ method, url, data, headers }) {
 
 }
 
-module.exports = {
-  debug: false,
-  preProcessor: undefined,
-  shortCircuit: undefined,
-  headers: { },
-  requestRunner: axiosRequestResolver,
-  async req(method, url, payload, headers) {
 
-    if (payload) payload = this.normalize(payload);
-    url = this.normalizeString(url);
+function normalize(thing) {
+  if (typeof thing === 'string') return normalizeString(thing);
+  else if (thing instanceof Object) return normalizeObject(thing);
+  else return thing;
+}
 
-    const requestHeaders = { ...this.headers, ...headers };
+function normalizeString(thing) {
+  for (const replacement of normalizationReplace) {
+    thing = thing.replace(new RegExp(replacement[1], 'g'), replacement[0]);
+  } return thing;
+}
 
-    if (this.debug) {
-      console.log('-> ynetwork init', { method, url, payload, requestHeaders });
+function normalizeObject(thing) {
+  for (const prop in thing) {
+    const t = thing[prop];
+    delete thing[prop];
+    thing[this.normalize(prop)] = this.normalize(t);
+  } return thing;
+}
+
+function log(...thing) {
+  if (globalDebug) console.log(':YN:', ...thing);
+}
+
+
+async function processRequest(method, url, payload, headers) {
+
+  url = normalize(url);
+  if (payload) payload = normalize(payload);
+  if (headers) headers = normalize(headers);
+
+  const requestHeaders = { ...globalHeaders, ...(headers || {}) };
+
+  log('Init', method, url, payload, requestHeaders);
+
+  if (globalShortCircuits.length > 0) {
+    for (const shortCircuit of globalShortCircuits) {
+
+      const result = await shortCircuit({ method, url, payload, headers: requestHeaders });
+      if (!result) continue
+
+      log('ShortCircuited', method, url, payload, requestHeaders);
+      return result;
+
     }
+  }
 
-    if (this.shortCircuit) {
+  let responseStatus;
+  let responseData;
+  let responseHeaders;
 
-      const shortCircuitResult = this.shortCircuit(url, method, payload);
+  try {
 
-      if (shortCircuitResult && typeof shortCircuitResult === 'object') {
-        console.log('-> ynetwork shortcircuited', { method, url });
-        return { result: shortCircuitResult.data, status: shortCircuitResult.status }
+    const response = await globalRequestRunner({ method, url, data: payload, headers: requestHeaders });
+
+    responseStatus = response.status;
+    responseData = response.data;
+    responseHeaders = response.headers;
+
+    log('Complete', method, url, payload, responseStatus, responseData, responseHeaders);
+
+  }
+  catch (error) {
+
+    responseStatus = error?.response?.status ?? -1;
+    responseData = error?.response?.data ?? error.message;
+    responseHeaders = error?.response?.headers;
+
+    log('Error', method, url, payload, responseStatus, responseData, requestHeaders);
+
+  }
+
+  if (globalPreprocessors.length > 0) {
+    for (const preprocessor of globalPreprocessors) {
+
+      const result = await preprocessor({ method, url, payload, headers: requestHeaders, status: responseStatus, data: responseData, responseHeaders });
+      if (!result) return;
+
+      if (result === true) {
+        log('Dismissed', method, url, payload, requestHeaders, responseStatus, responseData, requestHeaders);
+        return { status: -2, data: undefined, headers: {} };
       }
 
-    }
-
-    let status;
-    let response;
-    let responseHeaders;
-
-    try {
-
-      const result = await this.requestRunner({ method, url, data: payload, headers: requestHeaders });
-
-      status = result.status;
-      response = result.data;
+      responseStatus = result.status;
+      responseData = result.data;
       responseHeaders = result.headers;
 
-      if (this.debug) {
-        console.log('-> ynetwork done', { url, status, response, headers: responseHeaders });
-      }
+      log('PreProcessed', method, url, payload, requestHeaders, responseStatus, responseData, requestHeaders);
 
     }
-    catch (error) {
+  }
 
-      status = error.response ? error.response.status : -1;
-      response = error.response ? error.response.data : undefined;
-      responseHeaders = error.response ? error.response.headers : undefined;
+  return {
+    status: responseStatus,
+    data: responseData,
+    headers: responseHeaders
+  };
 
-      if (this.debug) {
-        console.log('-> ynetwork error', { method, url, response, error, headers: responseHeaders });
-      }
+}
 
+
+export const YNetwork = {
+  setDebug(debug) {
+    globalDebug = debug;
+  },
+  applyHeader(header, value) {
+    if (value === null || value === undefined || value === '') {
+      delete globalHeaders[header];
     }
-
-    const preProcessorResult = this.preProcessor ? this.preProcessor(method, url, payload, status, response) : undefined;
-    if (this.preProcessor && preProcessorResult) {
-      if (typeof preProcessorResult === 'object') {
-        response        = preProcessorResult.data;
-        status          = preProcessorResult.status;
-        responseHeaders = preProcessorResult.headers;
-      }
-      else if (preProcessorResult === true) {
-        console.log('-> ynetwork dismissed', { method, url, headers: requestHeaders });
-        return { status: 0, result: undefined, headers: {} };
-      }
+    else {
+      globalHeaders[header] = value;
     }
-
-    return { status: status, result: response, headers: responseHeaders };
-
+  },
+  removeHeader(header) {
+    delete globalHeaders[header];
+  },
+  applyPreprocessor(preprocessor) {
+    globalPreprocessors.push(preprocessor);
+  },
+  applyShortCircuit(shortCircuit) {
+    globalShortCircuits.push(shortCircuit);
+  },
+  setRequestRunner(runner) {
+    globalRequestRunner = runner;
   },
   async get(url, payload, headers) {
-    return this.req('get', url, payload || undefined, headers || {});
+    return processRequest('get', url, payload, headers);
   },
   async post(url, payload, headers) {
-    return this.req('post', url, payload, headers || {});
-  },
-  async patch(url, payload, headers) {
-    return this.req('patch', url, payload, headers || {});
-  },
-  async delete(url, payload, headers) {
-    return this.req('delete', url, payload, headers || {});
+    return processRequest('post', url, payload, headers);
   },
   async put(url, payload, headers) {
-    return this.req('put', url, payload, headers || {});
+    return processRequest('put', url, payload, headers);
+  },
+  async patch(url, payload, headers) {
+    return processRequest('patch', url, payload, headers);
+  },
+  async delete(url, payload, headers) {
+    return processRequest('delete', url, payload, headers);
   },
   async head(url, payload, headers) {
-    return this.req('head', url, payload, headers || {});
+    return processRequest('head', url, payload, headers);
   },
-  normalize: function (thing) {
-    if (typeof thing === 'string') return this.normalizeString(thing);
-    else if (thing instanceof Object) return this.normalizeObject(thing);
-    else return thing;
-  },
-  normalizeString: function (text) {
-
-    var replaces = ['0۰', '1۱', '2۲', '3۳', '4۴', '5۵', '6۶', '7۷', '8۸', '9۹'];
-
-    for (var i = 0; i < replaces.length; i++) {
-      text = text.replace(new RegExp(replaces[i][1], 'g'), replaces[i][0]);
-    }
-
-    return text;
-
-  },
-  normalizeObject: function (object) {
-    for (var prop in object) {
-      if (object.hasOwnProperty(prop)) {
-        var t = object[prop];
-        delete object[prop];
-        object[this.normalize(prop)] = this.normalize(t);
-      }
-    } return object;
-  }
-}
+  normalize
+};
