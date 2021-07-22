@@ -3,7 +3,6 @@
   "version": "3.0.1",
   "description": "Javascript interface and helper for network requests",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
