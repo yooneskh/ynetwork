@@ -136,7 +136,7 @@ async function processRequest(method, url, payload, headers) {
 }
 
 
-export const YNetwork = {
+module.exports.YNetwork = {
   setDebug(debug) {
     globalDebug = debug;
   },
