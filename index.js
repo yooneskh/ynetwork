@@ -51,7 +51,7 @@ function normalizeObject(thing) {
   for (const prop in thing) {
     const t = thing[prop];
     delete thing[prop];
-    thing[this.normalize(prop)] = this.normalize(t);
+    thing[normalize(prop)] = normalize(t);
   } return thing;
 }
 
