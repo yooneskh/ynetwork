@@ -99,9 +99,9 @@ async function processRequest(method, url, payload, headers) {
   }
   catch (error) {
 
-    responseStatus = error?.response?.status ?? -1;
-    responseData = error?.response?.data ?? error.message;
-    responseHeaders = error?.response?.headers;
+    responseStatus = !error || !error.response ? (-1) : (error.response.status);
+    responseData = !error ? (undefined) : (!error.response ? (error.message) : (error.response.data));
+    responseHeaders = !error || !error.response ? (undefined) : (error.response.headers);
 
     log('Error', method, url, payload, responseStatus, responseData, requestHeaders);
 
