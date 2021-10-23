@@ -4,7 +4,8 @@
   "description": "Javascript interface and helper for network requests",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "exit 0;"
   },
   "repository": {
     "type": "git",
@@ -24,6 +25,6 @@
   },
   "homepage": "https://github.com/yooneskh/ynetwork#readme",
   "dependencies": {
-    "axios": "0.21.1"
+    "axios": "0.23.0"
   }
 }
