@@ -56,7 +56,7 @@ function normalizeObject(thing) {
 }
 
 function log(...thing) {
-  if (globalDebug) console.log(':YN:', ...thing);
+  if (globalDebug) console.log(':yn:', ...thing);
 }
 
 
@@ -68,7 +68,7 @@ async function processRequest(method, url, payload, headers) {
 
   const requestHeaders = { ...globalHeaders, ...(headers || {}) };
 
-  log('Init', method, url, payload, requestHeaders);
+  log('initialize', { a_method: method, b_url: url, c_payload: payload, d_headers: requestHeaders });
 
   if (globalShortCircuits.length > 0) {
     for (const shortCircuit of globalShortCircuits) {
@@ -76,7 +76,7 @@ async function processRequest(method, url, payload, headers) {
       const result = await shortCircuit({ method, url, payload, headers: requestHeaders });
       if (!result) continue
 
-      log('ShortCircuited', method, url, payload, requestHeaders);
+      log('short-circuited', { a_method: method, b_url: url, c_payload: payload, d_headers: requestHeaders });
       return result;
 
     }
@@ -94,7 +94,7 @@ async function processRequest(method, url, payload, headers) {
     responseData = response.data;
     responseHeaders = response.headers;
 
-    log('Complete', method, url, payload, responseStatus, responseData, responseHeaders);
+    log('complete', { a_method: method, b_url: url, c_payload: payload, d_headers: requestHeaders, e_status: responseStatus, f_data: responseData, g_headers: responseHeaders });
 
   }
   catch (error) {
@@ -103,7 +103,7 @@ async function processRequest(method, url, payload, headers) {
     responseData = !error ? (undefined) : (!error.response ? (error.message) : (error.response.data));
     responseHeaders = !error || !error.response ? (undefined) : (error.response.headers);
 
-    log('Error', method, url, payload, responseStatus, responseData, requestHeaders);
+    log('error', { a_method: method, b_url: url, c_payload: payload, d_headers: requestHeaders, e_status: responseStatus, f_data: responseData, g_headers: responseHeaders });
 
   }
 
@@ -114,7 +114,7 @@ async function processRequest(method, url, payload, headers) {
       if (!result) return;
 
       if (result === true) {
-        log('Dismissed', method, url, payload, requestHeaders, responseStatus, responseData, requestHeaders);
+        log('dismissed', { a_method: method, b_url: url, c_payload: payload, d_headers: requestHeaders, e_status: responseStatus, f_data: responseData, g_headers: responseHeaders });
         return { status: -2, data: undefined, headers: {} };
       }
 
@@ -122,7 +122,7 @@ async function processRequest(method, url, payload, headers) {
       responseData = result.data;
       responseHeaders = result.headers;
 
-      log('PreProcessed', method, url, payload, requestHeaders, responseStatus, responseData, requestHeaders);
+      log('pre-processed', { a_method: method, b_url: url, c_payload: payload, d_headers: requestHeaders, e_status: responseStatus, f_data: responseData, g_headers: responseHeaders });
 
     }
   }
